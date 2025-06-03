@@ -23,11 +23,11 @@
   tasks:
     - name: Send mail with attachment
       community.general.mail:
-        host: smtp.example.com
-        port: 587
-        username: your_email@example.com
-        password: your_password
-        to: receiver@example.com
+        host: 172.23.18.26
+        port: 465
+        username: ansible@upay.systems
+        password: Upay@321
+        to: jahangir.alam@upaybd.com
         subject: "OS Info Report"
         body: "Please find attached the OS information report."
         attach:
