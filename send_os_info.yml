@@ -14,7 +14,7 @@
 
     - name: Fetch the file to control node
       fetch:
-        src: "/tmp/{{ inventory_hostname }}_os1_info.txt"
+        src: "/tmp/{{ inventory_hostname }}_os_info.txt"
         dest: "./os_reports/"
         flat: yes
 
@@ -31,4 +31,4 @@
         subject: "OS Info Report"
         body: "Please find attached the OS information report."
         attach:
-          - "./os_reports/{{ inventory_hostname }}_os1_info.txt"
+          - "./os_reports/{{ inventory_hostname }}_os_info.txt"
