@@ -1,0 +1,34 @@
+---
+- name: Gather OS info and send via email
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Save OS info to file
+      copy:
+        content: |
+          Host: {{ inventory_hostname }}
+          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Kernel: {{ ansible_kernel }}
+          Architecture: {{ ansible_architecture }}
+        dest: "/tmp/{{ inventory_hostname }}_os_info.txt"
+
+    - name: Fetch the file to control node
+      fetch:
+        src: "/tmp/{{ inventory_hostname }}_os_info.txt"
+        dest: "./os_reports/"
+        flat: yes
+
+- name: Send email with report
+  hosts: localhost
+  tasks:
+    - name: Send mail with attachment
+      community.general.mail:
+        host: smtp.example.com
+        port: 587
+        username: your_email@example.com
+        password: your_password
+        to: receiver@example.com
+        subject: "OS Info Report"
+        body: "Please find attached the OS information report."
+        attach:
+          - "./os_reports/hostname_os_info.txt"
