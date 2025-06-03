@@ -31,4 +31,4 @@
         subject: "OS Info Report"
         body: "Please find attached the OS information report."
         attach:
-          - "./os_reports/hostname_os_info.txt"
+          - "./os_reports/{{ inventory_hostname }}_os_info.txt"
