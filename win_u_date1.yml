@@ -1,0 +1,41 @@
+- name: Get last update info and send email
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Get last update (Linux - Debian)
+      shell: grep " upgrade " /var/log/dpkg.log | tail -1
+      register: last_update_dpkg
+      when: ansible_os_family == 'Debian'
+
+    - name: Get last update (Linux - RedHat)
+      shell: grep Updated /var/log/yum.log | tail -1
+      register: last_update_yum
+      when: ansible_os_family == 'RedHat'
+
+    - name: Get last update (Windows)
+      win_shell: |
+        Get-HotFix | Sort-Object -Property InstalledOn -Descending | Select-Object -First 1
+      register: win_update
+      when: ansible_os_family == 'Windows'
+
+    - name: Set update result fact
+      set_fact:
+        update_result: >-
+          {{
+            (last_update_dpkg.stdout | default("")) +
+            (last_update_yum.stdout | default("")) +
+            (win_update.stdout | default(""))
+          }}
+
+    - name: Send email with update info
+      community.general.mail:
+        host: smtp.yourdomain.com
+        port: 587
+        username: your_email@yourdomain.com
+        password: your_password
+        to: receiver@domain.com
+        subject: "Last Update Report - {{ inventory_hostname }}"
+        body: |
+          Host: {{ inventory_hostname }}
+          Update Info:
+          {{ update_result }}
