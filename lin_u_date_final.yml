@@ -6,7 +6,7 @@
     - name: Get Linux last update date (Debian/Ubuntu)
       shell: grep " upgrade " /var/log/dpkg.log | tail -1
       register: linux_update_dpkg
-      when: ansible_os_family == "Ubuntu"
+      when: ansible_os_family == "Debian"
       
     - name: Collect OS info in a fact
       set_fact:
@@ -16,7 +16,7 @@
           Kernel: {{ ansible_kernel }}
           Architecture: {{ ansible_architecture }}
           Hostname: {{ ansible_hostname }}
-          Last Update: {{ linux_update_dpkg.stdout }}
+          Last Update: {{ linux_update_dpkg.stdout | default('Not Available') }}
           
     - name: Add OS info to central file (delegated to localhost)
       delegate_to: localhost
