@@ -11,7 +11,7 @@
     - name: Get Linux last update date (Debian/Ubuntu)
       shell: grep " upgrade " /var/log/dpkg.log | tail -1
       register: linux_update_dpkg
-      when: ansible_os_family == "Debian"
+      when: ansible_os_family == "Ubuntu"
 
     - name: Get Linux last update date (RedHat/CentOS)
       shell: grep Updated /var/log/yum.log | tail -1
