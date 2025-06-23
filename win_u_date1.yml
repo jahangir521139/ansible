@@ -27,13 +27,16 @@
             (win_update.stdout | default(""))
           }}
 
-    - name: Send email with update info
+- name: Send OS info email
+  hosts: localhost
+  tasks:
+    - name: Email report
       community.general.mail:
-        host: smtp.yourdomain.com
-        port: 587
-        username: your_email@yourdomain.com
-        password: your_password
-        to: receiver@domain.com
+        host: 172.23.18.26
+        port: 465
+        username: ansible@upay.systems
+        password: Upay@321
+        to: jahangir.alam@upaybd.com, m.jahangir.alam@ucb.com.bd
         subject: "Last Update Report - {{ inventory_hostname }}"
         body: |
           Host: {{ inventory_hostname }}
