@@ -3,10 +3,9 @@
   hosts: all
   gather_facts: true
   tasks:
-    - name: Get Linux last update date (Debian/Ubuntu)
-      shell: grep " upgrade " /var/log/dpkg.log | tail -1
-      register: linux_update_dpkg
-      when: ansible_os_family == "Ubuntu"
+    - name: Get last Windows Update
+      win_shell: |
+        Get-HotFix | Sort-Object -Property InstalledOn -Descending | Select-Object -First 1
       
     - name: Collect OS info in a fact
       set_fact:
@@ -16,7 +15,7 @@
           Kernel: {{ ansible_kernel }}
           Architecture: {{ ansible_architecture }}
           Hostname: {{ ansible_hostname }}
-          linux_update_dpkg: { stdout: "" }
+          Last Update: {{ win_updates.stdout }}
           
     - name: Add OS info to central file (delegated to localhost)
       delegate_to: localhost
