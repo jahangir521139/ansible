@@ -11,6 +11,12 @@
           Kernel: {{ ansible_kernel }}
           Architecture: {{ ansible_architecture }}
           Hostname: {{ ansible_hostname }}
+          Last Update: {{
+            (linux_update_dpkg.stdout | default('')) +
+            (linux_update_yum.stdout | default('')) +
+            (mac_update.stdout | default('')) +
+            (win_update.stdout | default(''))
+          }}
 
     - name: Add OS info to central file (delegated to localhost)
       delegate_to: localhost
