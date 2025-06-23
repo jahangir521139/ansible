@@ -27,7 +27,7 @@
             (win_update.stdout | default(""))
           }}
 
-    - name: Send OS info email
+    - name: Send email with update info
       hosts: localhost
       tasks:
         - name: Email report
