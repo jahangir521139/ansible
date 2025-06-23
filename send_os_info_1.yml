@@ -3,11 +3,13 @@
   hosts: all
   gather_facts: true
   tasks:
+  
   - name: Get Windows last update date
       win_shell: |
         Get-HotFix | Sort-Object InstalledOn -Descending | Select-Object -First 1
       register: win_update
       when: ansible_os_family == "Windows"
+      
     - name: Collect OS info in a fact
       set_fact:
         os_info_report: |
