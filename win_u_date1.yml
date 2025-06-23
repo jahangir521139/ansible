@@ -36,13 +36,3 @@
             (mac_update.stdout | default('')) +
             (win_update.stdout | default(''))
           }}
-
-    - name: Send OS report via email
-      community.general.mail:
-        host: 172.23.18.26
-        port: 465
-        username: ansible@upay.systems
-        password: Upay@321
-        to: jahangir.alam@upaybd.com, m.jahangir.alam@ucb.com.bd
-        subject: "OS Info Report from {{ inventory_hostname }}"
-        body: "{{ os_report }}"
