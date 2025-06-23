@@ -31,7 +31,7 @@
           Kernel: {{ ansible_kernel }}
           Architecture: {{ ansible_architecture }}
           Hostname: {{ ansible_hostname }}
-          Last Update: {{ win_updates.stdout }}
+          Last Update: {{ linux_update_dpkg.stdout }}
 
           
     - name: Add OS info to central file (delegated to localhost)
