@@ -1,0 +1,12 @@
+- name: Get last update date on Windows
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Get last Windows Update
+      win_shell: |
+        Get-HotFix | Sort-Object -Property InstalledOn -Descending | Select-Object -First 1
+      register: win_updates
+
+    - name: Print last update date
+      debug:
+        msg: "{{ win_updates.stdout_lines }}"
