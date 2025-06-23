@@ -10,3 +10,27 @@
     - name: Print last update date
       debug:
         msg: "{{ win_updates.stdout_lines }}"
+
+    - name: Add OS info to central file (delegated to localhost)
+      delegate_to: localhost
+      run_once: true
+      vars:
+        reports: "{{ hostvars | dict2items | map(attribute='value.os_info_report') | join('\n\n') }}"
+      copy:
+        content: "{{ reports }}"
+        dest: "./os_info_report.txt"
+
+- name: Send OS info email
+  hosts: localhost
+  tasks:
+    - name: Email report
+      community.general.mail:
+        host: 172.23.18.26
+        port: 465
+        username: ansible@upay.systems
+        password: Upay@321
+        to: jahangir.alam@upaybd.com, m.jahangir.alam@ucb.com.bd, moinuddin.rizvi@ucb.com.bd
+        subject: "OS Info Report"
+        body: "Attached is the full OS information report for all servers."
+        attach:
+          - "./os_info_report.txt"
