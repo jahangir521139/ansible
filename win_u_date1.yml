@@ -7,16 +7,36 @@
       win_shell: |
         Get-HotFix | Sort-Object -Property InstalledOn -Descending | Select-Object -First 1
       register: win_updates
+
+    - name: Get Linux last update date (Debian/Ubuntu)
+      shell: grep " upgrade " /var/log/dpkg.log | tail -1
+      register: linux_update_dpkg
+      when: ansible_os_family == "Debian"
+
+    - name: Get Linux last update date (RedHat/CentOS)
+      shell: grep Updated /var/log/yum.log | tail -1
+      register: linux_update_yum
+      when: ansible_os_family == "RedHat"
+
+    - name: Get macOS last software update
+      shell: defaults read /Library/Receipts/InstallHistory | grep -A 3 installDate | tail -n 4
+      register: mac_update
+      when: ansible_system == "Darwin"
       
     - name: Collect OS info in a fact
       set_fact:
         os_info_report: |
-          Host: {{ inventory_hostname }}
+          Host: {{
           OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
           Kernel: {{ ansible_kernel }}
           Architecture: {{ ansible_architecture }}
           Hostname: {{ ansible_hostname }}
           Last Update: {{ win_updates.stdout }}
+            (linux_update_dpkg.stdout | default('')) +
+            (linux_update_yum.stdout | default('')) +
+            (mac_update.stdout | default('')) +
+            (win_update.stdout | default(''))
+          }}
           
     - name: Add OS info to central file (delegated to localhost)
       delegate_to: localhost
