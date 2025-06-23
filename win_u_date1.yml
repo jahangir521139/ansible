@@ -26,12 +26,12 @@
     - name: Collect OS info in a fact
       set_fact:
         os_info_report: |
-          Host: {{
+          Host: {{ inventory_hostname }}
           OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
           Kernel: {{ ansible_kernel }}
           Architecture: {{ ansible_architecture }}
           Hostname: {{ ansible_hostname }}
-          Last Update: {{ win_updates.stdout }}
+          Last Update: {{
             (linux_update_dpkg.stdout | default('')) +
             (linux_update_yum.stdout | default('')) +
             (mac_update.stdout | default('')) +
