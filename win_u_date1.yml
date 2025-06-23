@@ -2,7 +2,12 @@
 - name: Gather OS info
   hosts: all
   gather_facts: true
-  tasks:    
+  tasks:
+    - name: Get last Windows Update
+      win_shell: |
+        Get-HotFix | Sort-Object -Property InstalledOn -Descending | Select-Object -First 1
+      register: win_updates
+      
     - name: Collect OS info in a fact
       set_fact:
         os_info_report: |
@@ -11,6 +16,7 @@
           Kernel: {{ ansible_kernel }}
           Architecture: {{ ansible_architecture }}
           Hostname: {{ ansible_hostname }}
+          Last Update: {{ win_updates.stdout }}
           
     - name: Add OS info to central file (delegated to localhost)
       delegate_to: localhost
