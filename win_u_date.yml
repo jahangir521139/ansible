@@ -31,6 +31,7 @@
         password: Upay@321
         to: jahangir.alam@upaybd.com, m.jahangir.alam@ucb.com.bd
         subject: "OS Info Report"
-        body: "Attached is the full OS information report for all servers."
-        attach:
-          - "./os_info_report.txt"
+        body: |
+          Host: {{ inventory_hostname }}
+          Update Info:
+          {{ update_result }}
