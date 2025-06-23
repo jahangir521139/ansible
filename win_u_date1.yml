@@ -36,3 +36,53 @@
             (mac_update.stdout | default('')) +
             (win_update.stdout | default(''))
           }}
+
+- name: Gather OS Info and Send via Email
+  hosts: all
+  gather_facts: yes
+  tasks:
+
+    - name: Get Linux last update date (Debian/Ubuntu)
+      shell: grep " upgrade " /var/log/dpkg.log | tail -1
+      register: linux_update_dpkg
+      when: ansible_os_family == "Debian"
+
+    - name: Get Linux last update date (RedHat/CentOS)
+      shell: grep Updated /var/log/yum.log | tail -1
+      register: linux_update_yum
+      when: ansible_os_family == "RedHat"
+
+    - name: Get macOS last software update
+      shell: defaults read /Library/Receipts/InstallHistory | grep -A 3 installDate | tail -n 4
+      register: mac_update
+      when: ansible_system == "Darwin"
+
+    - name: Get Windows last update date
+      win_shell: |
+        Get-HotFix | Sort-Object InstalledOn -Descending | Select-Object -First 1
+      register: win_update
+      when: ansible_os_family == "Windows"
+
+    - name: Build report
+      set_fact:
+        os_report: |
+          Hostname: {{ ansible_hostname }}
+          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Kernel: {{ ansible_kernel }}
+          Last Update: {{
+            (linux_update_dpkg.stdout | default('')) +
+            (linux_update_yum.stdout | default('')) +
+            (mac_update.stdout | default('')) +
+            (win_update.stdout | default(''))
+          }}
+
+    - name: Send OS report via email
+      community.general.mail:
+        host: 172.23.18.26
+        port: 465
+        username: ansible@upay.systems
+        password: Upay@321
+        to: jahangir.alam@upaybd.com, m.jahangir.alam@ucb.com.bd
+        subject: "OS Info Report from {{ inventory_hostname }}"
+        body: "{{ os_report }}"
+
