@@ -3,25 +3,10 @@
   hosts: all
   gather_facts: true
   tasks:
-    - name: Get last Windows Update
-      win_shell: |
-        Get-HotFix | Sort-Object -Property InstalledOn -Descending | Select-Object -First 1
-      register: win_updates
-
     - name: Get Linux last update date (Debian/Ubuntu)
       shell: grep " upgrade " /var/log/dpkg.log | tail -1
       register: linux_update_dpkg
       when: ansible_os_family == "Ubuntu"
-
-    - name: Get Linux last update date (RedHat/CentOS)
-      shell: grep Updated /var/log/yum.log | tail -1
-      register: linux_update_yum
-      when: ansible_os_family == "RedHat"
-
-    - name: Get macOS last software update
-      shell: defaults read /Library/Receipts/InstallHistory | grep -A 3 installDate | tail -n 4
-      register: mac_update
-      when: ansible_system == "Darwin"
       
     - name: Collect OS info in a fact
       set_fact:
