@@ -6,6 +6,7 @@
     - name: Get last Windows Update
       win_shell: |
         Get-HotFix | Sort-Object -Property InstalledOn -Descending | Select-Object -First 1
+      register: win_updates
       
     - name: Collect OS info in a fact
       set_fact:
