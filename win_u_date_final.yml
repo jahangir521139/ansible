@@ -32,7 +32,7 @@
   tasks:
     - name: Email report
       community.general.mail:
-        host: 103.159.0.242
+        host: 103.159.0.237
         port: 465
         username: ansible@upay.systems
         password: Upay@321
