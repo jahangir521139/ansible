@@ -32,7 +32,7 @@
   tasks:
     - name: Email report
       community.general.mail:
-        host: 172.23.18.26
+        host: mail.ucb.com.bd
         port: 465
         username: m.jahangir.alam@ucb.com.bd
         password: Jabira@521139
