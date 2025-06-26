@@ -34,9 +34,9 @@
       community.general.mail:
         host: 172.23.18.26
         port: 465
-        username: ansible@upay.systems
-        password: Upay@321
-        to: jahangir.alam@upaybd.com, m.jahangir.alam@ucb.com.bd
+        username: m.jahangir.alam@ucb.com.bd
+        password: Jabira@521139
+        to: jahangir.alam@upaybd.com
         subject: "OS Info Report"
         body: "Attached is the full OS information report for all servers."
         attach:
