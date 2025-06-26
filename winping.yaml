@@ -1,6 +1,6 @@
 ---
 - name: Test WinRM
-  hosts: all
+  hosts: 172.29.10.0/24
   tasks:
     - name: Win Ping
       win_ping:
