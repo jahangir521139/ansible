@@ -32,11 +32,11 @@
   tasks:
     - name: Email report
       community.general.mail:
-        host: 103.117.142.25
+        host: 103.159.0.242
         port: 465
-        username: m.jahangir.alam@ucb.com.bd
+        username: ansible@upay.systems
         password: Upay@321
-        to: jahangir.alam@upaybd.com
+        to: i.ahmed@ucb.com.bd, m.jahangir.alam@ucb.com.bd
         subject: "OS Info Report"
         body: "Attached is the full OS information report for all servers."
         attach:
