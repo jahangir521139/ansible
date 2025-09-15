@@ -1,0 +1,42 @@
+---
+- name: Gather IP and DNS configuration on Linux hosts
+  hosts: all
+  gather_facts: yes
+  become: true
+
+  tasks:
+
+    - name: Get IP and interface info
+      set_fact:
+        ip_report: |
+          Hostname: {{ ansible_hostname }}
+          Interfaces:
+          {% for iface, data in ansible_facts['interfaces'] | dictsort %}
+            - {{ iface }}:
+                IPs:
+                {% for addr in ansible_facts['ansible_' + iface]['ipv4']['address'] | default([]) %}
+                  - {{ addr }}
+                {% endfor %}
+          {% endfor %}
+
+    - name: Check /etc/resolv.conf
+      shell: cat /etc/resolv.conf
+      register: resolv_conf
+
+    - name: Check systemd-resolved status (Ubuntu-specific)
+      shell: systemd-resolve --status || true
+      register: resolved_status
+      changed_when: false
+      failed_when: false
+
+    - name: Output report
+      debug:
+        msg: |
+          === Network Configuration Report ===
+          {{ ip_report }}
+
+          === DNS from /etc/resolv.conf ===
+          {{ resolv_conf.stdout }}
+
+          === systemd-resolve (if available) ===
+          {{ resolved_status.stdout }}
