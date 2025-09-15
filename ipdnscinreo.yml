@@ -39,14 +39,15 @@
       delegate_to: localhost
       run_once: true
 
-    - name: Send CSV report by email
-      mail:
-        host: "localhost"
+  tasks:
+    - name: Email browser report
+      community.general.mail:
+        host: 172.25.10.51
         port: 25
-        to: "recipient@example.com"
+        secure: never 
+        from: m.jahangir.alam@ucb.com.bd
+        to: m.jahangir.alam@ucb.com.bd
         subject: "Network & DNS Report"
-        body: "Please find the attached network and DNS report."
+        body: "Attached is the browser version report from all Windows hosts."
         attach:
           - "{{ csv_report_path }}"
-      delegate_to: localhost
-      run_once: true
