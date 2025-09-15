@@ -1,20 +1,21 @@
 ---
-- name: Update only DNS servers in netplan config (Ubuntu)
+- name: Update DNS servers in netplan YAML
   hosts: all
   become: true
   vars:
-    netplan_file_path: "/etc/netplan/00-installer-config.yaml"  # Change if your netplan file is different
-    new_dns_block: |
-      addresses:
-        - 1.1.1.1
-        - 8.8.8.8
+    netplan_file: /etc/netplan/00-installer-config.yaml
+    new_dns:
+      - 1.1.1.1
+      - 8.8.8.8
 
   tasks:
-    - name: Replace DNS addresses in netplan config
+    - name: Replace DNS addresses block in netplan
       replace:
-        path: "{{ netplan_file_path }}"
-        regexp: '^\s*addresses:\n(\s*-\s.*\n)+'
-        replace: "{{ new_dns_block | indent(6, false) }}"
+        path: "{{ netplan_file }}"
+        # Match the block starting with "addresses:" under "nameservers:"
+        regexp: '(nameservers:\n\s*addresses:\n)(\s*-\s.*\n)+'
+        # Replace with the new DNS list properly indented (6 spaces)
+        replace: "{{ 'nameservers:\n      addresses:\n' + (new_dns | map('regex_replace', '(.*)', '        - \\1') | join('\n')) + '\n' }}"
       notify: Apply netplan
 
   handlers:
