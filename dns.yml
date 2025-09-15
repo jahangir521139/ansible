@@ -1,6 +1,6 @@
 ---
 - name: Set permanent DNS on Ubuntu without changing interface
-  hosts: ubuntu_servers
+  hosts: all
   become: true
   vars:
     dns_servers:
