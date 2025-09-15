@@ -42,10 +42,10 @@
   tasks:
     - name: Email browser report
       community.general.mail:
-        host: 172.25.10.51
-        port: 25
-        secure: never 
-        from: m.jahangir.alam@ucb.com.bd
+        host: 172.23.18.26
+        port: 465
+        username: ansible@upay.systems
+        password: Upay@321
         to: m.jahangir.alam@ucb.com.bd
         subject: "Network & DNS Report"
         body: "Attached is the browser version report from all Windows hosts."
