@@ -1,9 +1,7 @@
 ---
 - name: Set permanent DNS on Ubuntu without changing interface
   hosts: all
-  become: true
   vars:
-    ansible_become_password: Root@1234
     dns_servers:
       - 8.8.8.8
       - 1.1.1.1
