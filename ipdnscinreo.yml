@@ -39,15 +39,17 @@
       delegate_to: localhost
       run_once: true
 
-  tasks:
-    - name: Email browser report
+    - name: Email Network & DNS report
       community.general.mail:
         host: 172.23.18.26
         port: 465
         username: ansible@upay.systems
         password: Upay@321
+        secure: always
         to: m.jahangir.alam@ucb.com.bd
         subject: "Network & DNS Report"
-        body: "Attached is the browser version report from all Windows hosts."
+        body: "Attached is the network and DNS report from all Linux hosts."
         attach:
           - "{{ csv_report_path }}"
+      delegate_to: localhost
+      run_once: true
