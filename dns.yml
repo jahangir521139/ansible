@@ -1,30 +1,22 @@
 ---
-- name: Set permanent DNS on Ubuntu without changing interface
+- name: Update only DNS servers in netplan config (Ubuntu)
   hosts: all
+  become: true
   vars:
-    dns_servers:
-      - 8.8.8.8
-      - 1.1.1.1
-    netplan_config: "/etc/netplan/00-installer-config.yaml"  # Adjust if needed
+    netplan_file_path: "/etc/netplan/01-netcfg.yaml"  # Change if your netplan file is different
+    new_dns_block: |
+      addresses:
+        - 1.1.1.1
+        - 8.8.8.8
 
   tasks:
-    - name: Backup existing Netplan config
-      copy:
-        src: "{{ netplan_config }}"
-        dest: "{{ netplan_config }}.bak"
-        remote_src: yes
+    - name: Replace DNS addresses in netplan config
+      replace:
+        path: "{{ netplan_file_path }}"
+        regexp: '^\s*addresses:\n(\s*-\s.*\n)+'
+        replace: "{{ new_dns_block | indent(6, false) }}"
+      notify: Apply netplan
 
-    - name: Insert or update nameservers section under existing interface
-      blockinfile:
-        path: "{{ netplan_config }}"
-        marker: "# {mark} ANSIBLE MANAGED DNS"
-        block: |
-          nameservers:
-            addresses:
-            {% for dns in dns_servers %}
-              - {{ dns }}
-            {% endfor %}
-        insertafter: '^\s+dhcp4:.*'   # This assumes dhcp4 or static config already exists
-
-    - name: Apply Netplan
+  handlers:
+    - name: Apply netplan
       command: netplan apply
