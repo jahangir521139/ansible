@@ -1,13 +1,11 @@
----
-- name: Show network and DNS configuration on Linux systems
+- name: Collect and Report Network/DNS Info on Linux Systems
   hosts: all
   gather_facts: yes
-
   vars:
     dns_file: "/etc/resolv.conf"
+    csv_report_path: "/tmp/network_dns_report.csv"
 
   tasks:
-
     - name: Get network interface IP addresses
       set_fact:
         ip_report: >-
@@ -15,22 +13,40 @@
           {% for iface in ansible_interfaces %}
             {% set iface_data = hostvars[inventory_hostname]['ansible_' + iface] %}
             {% if iface_data is defined and iface_data.ipv4 is defined %}
-              {% set _ = ip_list.append(iface + ' - ' + iface_data.ipv4.address) %}
+              {% set _ = ip_list.append(iface + ':' + iface_data.ipv4.address) %}
             {% endif %}
           {% endfor %}
-          {{ ip_list | join(', ') }}
+          {{ ip_list | join(' | ') }}
 
     - name: Get DNS settings from /etc/resolv.conf
       ansible.builtin.shell: cat {{ dns_file }}
       register: resolv_conf
       changed_when: false
 
-    - name: Show network and DNS config for each host
-      debug:
-        msg: |
-          ==== Network & DNS Info ====
-          Hostname: {{ ansible_hostname }}
-          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
-          IPs: {{ ip_report }}
-          DNS Config (/etc/resolv.conf):
-          {{ resolv_conf.stdout }}
+    - name: Save host data to CSV format
+      lineinfile:
+        path: "{{ csv_report_path }}"
+        create: yes
+        line: "{{ ansible_hostname }},{{ ansible_distribution }} {{ ansible_distribution_version }},{{ ip_report }},\"{{ resolv_conf.stdout | replace('\n', '; ') }}\""
+      delegate_to: localhost
+      run_once: false
+
+    - name: Add CSV headers (only once)
+      lineinfile:
+        path: "{{ csv_report_path }}"
+        line: "Hostname,OS,IP Addresses,DNS Config"
+        insertafter: BOF
+      delegate_to: localhost
+      run_once: true
+
+    - name: Send CSV report by email
+      mail:
+        host: "localhost"
+        port: 25
+        to: "recipient@example.com"
+        subject: "Network & DNS Report"
+        body: "Please find the attached network and DNS report."
+        attach:
+          - "{{ csv_report_path }}"
+      delegate_to: localhost
+      run_once: true
