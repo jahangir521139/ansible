@@ -3,7 +3,7 @@
   hosts: all
   become: true
   vars:
-    netplan_file_path: "/etc/netplan/01-netcfg.yaml"  # Change if your netplan file is different
+    netplan_file_path: "/etc/netplan/00-installer-config.yaml"  # Change if your netplan file is different
     new_dns_block: |
       addresses:
         - 1.1.1.1
