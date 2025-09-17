@@ -1,0 +1,36 @@
+---
+- name: Gather and report resolv.conf and netplan config
+  hosts: all
+  become: true
+  tasks:
+
+    - name: Read /etc/resolv.conf
+      ansible.builtin.slurp:
+        src: /etc/resolv.conf
+      register: resolv_conf
+
+    - name: Decode /etc/resolv.conf
+      set_fact:
+        resolv_conf_decoded: "{{ resolv_conf['content'] | b64decode }}"
+
+    - name: Show /etc/resolv.conf content
+      debug:
+        msg: |
+          ===== /etc/resolv.conf on {{ inventory_hostname }} =====
+          {{ resolv_conf_decoded }}
+
+    - name: Read /etc/netplan/50-cloud-init.yaml
+      ansible.builtin.slurp:
+        src: /etc/netplan/50-cloud-init.yaml
+      register: netplan_conf
+      ignore_errors: true   # in case some servers don’t use cloud-init
+
+    - name: Decode /etc/netplan/50-cloud-init.yaml
+      set_fact:
+        netplan_conf_decoded: "{{ netplan_conf['content'] | b64decode if netplan_conf['content'] is defined else 'File not found' }}"
+
+    - name: Show /etc/netplan/50-cloud-init.yaml content
+      debug:
+        msg: |
+          ===== /etc/netplan/50-cloud-init.yaml on {{ inventory_hostname }} =====
+          {{ netplan_conf_decoded }}
