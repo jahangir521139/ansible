@@ -14,7 +14,7 @@
     detailed_status: >-
       {% if ping_result is succeeded %}
         REACHABLE
-      {% elif ping_result.msg is defined and ('Invalid/incorrect password:' in ping_result.msg or 'Permission denied' in ping_result.msg) %}
+      {% elif ping_result.msg is defined and ('Invalid/incorrect password' in ping_result.msg or 'Permission denied' in ping_result.msg) %}
         AUTHENTICATION FAILED
       {% elif ping_result.msg is defined and 'Connection refused' in ping_result.msg %}
         CONNECTION REFUSED
