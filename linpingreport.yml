@@ -16,7 +16,7 @@
         REACHABLE
       {% elif ping_result.msg is defined and ('Invalid/incorrect password:' in ping_result.msg or 'Permission denied' in ping_result.msg) %}
         AUTHENTICATION FAILED
-      {% elif ping_result.msg is defined and 'Connection refused' in ping_result.msg %}
+      {% elif ping_result.msg is defined and 'Failed to connect to the host via ssh' in ping_result.msg %}
         CONNECTION REFUSED
       {% elif ping_result.msg is defined and ('Timeout' in ping_result.msg or 'timed out' in ping_result.msg) %}
         TIMEOUT
