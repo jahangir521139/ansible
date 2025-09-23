@@ -31,9 +31,6 @@
 - name: Send connectivity report email (CSV format)
   hosts: localhost
   gather_facts: no
-  vars:
-    email_recipient: "recipient@example.com"
-    email_subject: "Ping Connectivity Report - CSV Format"
   tasks:
 
     - name: Generate CSV formatted report
@@ -44,14 +41,20 @@
           {{ host }},{{ status }}
           {% endfor %}
 
-    - name: Send email with CSV connectivity report
+    - name: (Optional) Save CSV to file
+      copy:
+        content: "{{ csv_report }}"
+        dest: "./ping_report.csv"
+
+    - name: Send CSV report as email attachment
       community.general.mail:
         host: 172.23.18.26
         port: 465
         username: ansible@upay.systems
         password: Upay@321
         to: m.jahangir.alam@ucb.com.bd
-        subject: "{{ email_subject }}"
-        body: "{{ csv_report }}"
+        subject: "Unbound Timer CSV Report"
+        body: "Please find attached the ssh and rechibility status report in CSV format."
+        attach:
+          - "./ping_report.csv"
         secure: always
-        subtype: "csv"
