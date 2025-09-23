@@ -45,6 +45,7 @@
       copy:
         content: "{{ csv_report }}"
         dest: "./ping_report.csv"
+      connection: local 
 
     - name: Send CSV report as email attachment
       community.general.mail:
