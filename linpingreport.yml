@@ -1,5 +1,5 @@
 ---
-- name: Check connectivity of all Linux hosts
+- name: Ping all Linux hosts and collect status
   hosts: all
   gather_facts: no
   tasks:
@@ -9,53 +9,45 @@
       register: ping_result
       ignore_errors: yes
 
-    - name: Set host status fact
+    - name: Set CSV line for each host
       set_fact:
-        host_status: "{{ 'REACHABLE' if ping_result is succeeded else 'UNREACHABLE' }}"
+        ping_info_line: "{{ inventory_hostname }},{{ 'REACHABLE' if ping_result is succeeded else 'UNREACHABLE' }}"
 
-    - name: Add host status to global dict on localhost
-      run_once: true
-      delegate_to: localhost
-      set_fact:
-        all_hosts_status: "{{ (all_hosts_status | default({})) | combine({inventory_hostname: host_status}) }}"
-
-- name: Pass all_hosts_status fact to localhost for emailing
+- name: Combine Ping CSV Report on Controller
   hosts: localhost
+  connection: local
   gather_facts: no
-  tasks:
-    - name: Add all_hosts_status fact to localhost hostvars
-      add_host:
-        name: localhost
-        all_hosts_status: "{{ hostvars['localhost'].all_hosts_status | default({}) }}"
-
-- name: Send connectivity report email (CSV format)
-  hosts: localhost
-  gather_facts: no
+  vars:
+    csv_file_path: "./ping_reachability_report.csv"
+    email_recipient: "m.jahangir.alam@ucb.com.bd"
+    smtp_host: "172.23.18.26"
+    smtp_port: 465
+    smtp_user: "ansible@upay.systems"
+    smtp_password: "Upay@321"
   tasks:
 
-    - name: Generate CSV formatted report
+    - name: Build CSV from all hosts
       set_fact:
         csv_report: |
-          host,status
-          {% for host, status in hostvars['localhost'].all_hosts_status.items() %}
-          {{ host }},{{ status }}
+          Host,Reachability
+          {% for host in groups['all'] %}
+          {{ hostvars[host].ping_info_line | default(host + ',UNKNOWN') }}
           {% endfor %}
 
-    - name: (Optional) Save CSV to file
+    - name: Save CSV to file
       copy:
         content: "{{ csv_report }}"
-        dest: "./ping_report.csv"
-      connection: local 
+        dest: "{{ csv_file_path }}"
 
     - name: Send CSV report as email attachment
       community.general.mail:
-        host: 172.23.18.26
-        port: 465
-        username: ansible@upay.systems
-        password: Upay@321
-        to: m.jahangir.alam@ucb.com.bd
-        subject: "Unbound Timer CSV Report"
-        body: "Please find attached the ssh and rechibility status report in CSV format."
+        host: "{{ smtp_host }}"
+        port: "{{ smtp_port }}"
+        username: "{{ smtp_user }}"
+        password: "{{ smtp_password }}"
+        to: "{{ email_recipient }}"
+        subject: "Ping Reachability CSV Report"
+        body: "Please find attached the ping reachability status report in CSV format."
         attach:
-          - "./ping_report.csv"
+          - "{{ csv_file_path }}"
         secure: always
