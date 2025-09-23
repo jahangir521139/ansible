@@ -46,7 +46,7 @@
         csv_report: |
           Host,Status
           {% for host in groups['all'] %}
-          {{ hostvars[host].ping_info_line | default(host + ',UNKNOWN') }}
+          {{ hostvars[host].ping_info_line }}
           {% endfor %}
 
     - name: Save CSV report to file
