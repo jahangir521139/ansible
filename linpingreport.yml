@@ -45,16 +45,24 @@
     smtp_password: "Upay@321"
   tasks:
 
-    - name: Collect ping_info_line from all hosts
+    - name: Collect ping_info_line from all hosts (safe)
       set_fact:
-        hosts_status: "{{ dict(groups['all'] | zip(groups['all'] | map('extract', hostvars, 'ping_info_line'))) }}"
+        hosts_status: >-
+          {{
+            dict(
+              groups['all'] |
+              zip(
+                groups['all'] | map('extract', hostvars) | map(attribute='ping_info_line') | map('default', 'UNKNOWN')
+              )
+            )
+          }}
 
     - name: Build CSV content
       set_fact:
         csv_report: |
           Host,Status
           {% for host, line in hosts_status.items() %}
-          {{ line | default(host + ',UNKNOWN') }}
+          {{ line }}
           {% endfor %}
 
     - name: Save CSV report to file
