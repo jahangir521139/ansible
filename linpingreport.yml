@@ -1,36 +1,6 @@
 ---
-- name: Ping all Linux hosts and collect detailed status
+- name: Check reachability and send report
   hosts: all
-  gather_facts: no
-  tasks:
-
-    - name: Try to ping the host
-      ansible.builtin.ping:
-      register: ping_result
-      ignore_errors: yes
-
-    - name: Determine detailed status
-      set_fact:
-        detailed_status: >-
-          {% if ping_result is succeeded %}
-            REACHABLE
-          {% elif 'Permission denied' in ping_result.msg %}
-            AUTHENTICATION FAILED
-          {% elif 'Connection refused' in ping_result.msg %}
-            CONNECTION REFUSED
-          {% elif 'Timeout' in ping_result.msg or 'timed out' in ping_result.msg %}
-            TIMEOUT
-          {% else %}
-            UNREACHABLE
-          {% endif %}
-
-    - name: Set CSV line for each host
-      set_fact:
-        ping_info_line: "{{ inventory_hostname }},{{ detailed_status }}"
-
-- name: Combine CSV Report on Controller
-  hosts: localhost
-  connection: local
   gather_facts: no
   vars:
     csv_file_path: "./detailed_ping_report.csv"
@@ -41,28 +11,65 @@
     smtp_password: "Upay@321"
   tasks:
 
-    - name: Build CSV from all hosts
-      set_fact:
-        csv_report: |
-          Host,Status
-          {% for host in groups['all'] %}
-          {{ hostvars[host].ping_info_line | default(host + ',UNKNOWN') }}
-          {% endfor %}
+    - name: Try to ping the host
+      block:
+        - name: Ping the host
+          ansible.builtin.ping:
+          register: ping_result
 
-    - name: Save CSV report to file
-      copy:
-        content: "{{ csv_report }}"
-        dest: "{{ csv_file_path }}"
+        - name: Set status as REACHABLE
+          set_fact:
+            ping_info_line: "{{ inventory_hostname }},REACHABLE"
 
-    - name: Send CSV report as email attachment
-      community.general.mail:
-        host: "{{ smtp_host }}"
-        port: "{{ smtp_port }}"
-        username: "{{ smtp_user }}"
-        password: "{{ smtp_password }}"
-        to: "{{ email_recipient }}"
-        subject: "Detailed Reachability CSV Report"
-        body: "Please find attached the reachability status report with detailed reasons."
-        attach:
-          - "{{ csv_file_path }}"
-        secure: always
+      rescue:
+        - name: Catch ping failure and analyze message
+          set_fact:
+            ping_error_msg: "{{ ansible_failed_result.msg | default('Unknown error') }}"
+
+        - name: Set detailed unreachable reason
+          set_fact:
+            ping_info_line: >-
+              {{ inventory_hostname }},
+              {% if 'Connection refused' in ping_error_msg %}
+                CONNECTION REFUSED
+              {% elif 'Permission denied' in ping_error_msg %}
+                AUTHENTICATION FAILED
+              {% elif 'timed out' in ping_error_msg or 'Timeout' in ping_error_msg %}
+                TIMEOUT
+              {% else %}
+                UNREACHABLE
+              {% endif %}
+
+    - name: Send report from localhost after gathering all hosts info
+      run_once: true
+      delegate_to: localhost
+      gather_facts: no
+      vars:
+        hosts_status: "{{ dict(groups['all'] | zip(groups['all'] | map('extract', hostvars, 'ping_info_line'))) }}"
+      tasks:
+
+        - name: Build CSV content
+          set_fact:
+            csv_report: |
+              Host,Status
+              {% for host, line in hosts_status.items() %}
+              {{ line | default(host + ',UNKNOWN') }}
+              {% endfor %}
+
+        - name: Save CSV report to file
+          copy:
+            content: "{{ csv_report }}"
+            dest: "{{ csv_file_path }}"
+
+        - name: Send CSV report via email
+          community.general.mail:
+            host: "{{ smtp_host }}"
+            port: "{{ smtp_port }}"
+            username: "{{ smtp_user }}"
+            password: "{{ smtp_password }}"
+            to: "{{ email_recipient }}"
+            subject: "Detailed Ping Reachability Report"
+            body: "Please find attached the detailed ping reachability status report in CSV format."
+            attach:
+              - "{{ csv_file_path }}"
+            secure: always
