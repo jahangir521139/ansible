@@ -1,14 +1,7 @@
 ---
-- name: Check reachability and send report
+- name: Ping all hosts and collect status
   hosts: all
   gather_facts: no
-  vars:
-    csv_file_path: "./detailed_ping_report.csv"
-    email_recipient: "m.jahangir.alam@ucb.com.bd"
-    smtp_host: "172.23.18.26"
-    smtp_port: 465
-    smtp_user: "ansible@upay.systems"
-    smtp_password: "Upay@321"
   tasks:
 
     - name: Try to ping the host
@@ -40,36 +33,44 @@
                 UNREACHABLE
               {% endif %}
 
-    - name: Send report from localhost after gathering all hosts info
-      run_once: true
-      delegate_to: localhost
-      gather_facts: no
-      vars:
+- name: Combine report and send email from localhost
+  hosts: localhost
+  gather_facts: no
+  vars:
+    csv_file_path: "./detailed_ping_report.csv"
+    email_recipient: "m.jahangir.alam@ucb.com.bd"
+    smtp_host: "172.23.18.26"
+    smtp_port: 465
+    smtp_user: "ansible@upay.systems"
+    smtp_password: "Upay@321"
+  tasks:
+
+    - name: Collect ping_info_line from all hosts
+      set_fact:
         hosts_status: "{{ dict(groups['all'] | zip(groups['all'] | map('extract', hostvars, 'ping_info_line'))) }}"
-      tasks:
 
-        - name: Build CSV content
-          set_fact:
-            csv_report: |
-              Host,Status
-              {% for host, line in hosts_status.items() %}
-              {{ line | default(host + ',UNKNOWN') }}
-              {% endfor %}
+    - name: Build CSV content
+      set_fact:
+        csv_report: |
+          Host,Status
+          {% for host, line in hosts_status.items() %}
+          {{ line | default(host + ',UNKNOWN') }}
+          {% endfor %}
 
-        - name: Save CSV report to file
-          copy:
-            content: "{{ csv_report }}"
-            dest: "{{ csv_file_path }}"
+    - name: Save CSV report to file
+      copy:
+        content: "{{ csv_report }}"
+        dest: "{{ csv_file_path }}"
 
-        - name: Send CSV report via email
-          community.general.mail:
-            host: "{{ smtp_host }}"
-            port: "{{ smtp_port }}"
-            username: "{{ smtp_user }}"
-            password: "{{ smtp_password }}"
-            to: "{{ email_recipient }}"
-            subject: "Detailed Ping Reachability Report"
-            body: "Please find attached the detailed ping reachability status report in CSV format."
-            attach:
-              - "{{ csv_file_path }}"
-            secure: always
+    - name: Send CSV report via email
+      community.general.mail:
+        host: "{{ smtp_host }}"
+        port: "{{ smtp_port }}"
+        username: "{{ smtp_user }}"
+        password: "{{ smtp_password }}"
+        to: "{{ email_recipient }}"
+        subject: "Detailed Ping Reachability Report"
+        body: "Please find attached the detailed ping reachability status report in CSV format."
+        attach:
+          - "{{ csv_file_path }}"
+        secure: always
