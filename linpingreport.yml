@@ -9,21 +9,20 @@
       register: ping_result
       ignore_errors: yes
 
-- name: Determine detailed status
-  set_fact:
-    detailed_status: >-
-      {% if ping_result is succeeded %}
-        REACHABLE
-      {% elif ping_result.msg is defined and ('Invalid/incorrect password' in ping_result.msg or 'Permission denied' in ping_result.msg) %}
-        AUTHENTICATION FAILED
-      {% elif ping_result.msg is defined and 'Connection refused' in ping_result.msg %}
-        CONNECTION REFUSED
-      {% elif ping_result.msg is defined and ('Timeout' in ping_result.msg or 'timed out' in ping_result.msg) %}
-        TIMEOUT
-      {% else %}
-        UNREACHABLE
-      {% endif %}
-
+    - name: Determine detailed status
+      set_fact:
+        detailed_status: >-
+          {% if ping_result is succeeded %}
+            REACHABLE
+          {% elif ping_result.msg is defined and ('Invalid/incorrect password' in ping_result.msg or 'Permission denied' in ping_result.msg) %}
+            AUTHENTICATION FAILED
+          {% elif ping_result.msg is defined and 'Connection refused' in ping_result.msg %}
+            CONNECTION REFUSED
+          {% elif ping_result.msg is defined and ('Timeout' in ping_result.msg or 'timed out' in ping_result.msg) %}
+            TIMEOUT
+          {% else %}
+            UNREACHABLE
+          {% endif %}
 
     - name: Set CSV line for each host
       set_fact:
