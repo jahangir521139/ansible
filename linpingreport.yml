@@ -4,23 +4,34 @@
   gather_facts: no
   tasks:
 
-    - name: Try to ping the host
-      ansible.builtin.ping:
-      register: ping_result
-      ignore_errors: yes
+    - block:
+        - name: Try to ping the host
+          ansible.builtin.ping:
+          register: ping_result
+          ignore_errors: yes
+
+        - name: Set result message for success
+          set_fact:
+            ping_result_msg: "{{ ping_result.msg | default('') }}"
+            ping_status: "{{ ping_result is succeeded }}"
+      rescue:
+        - name: Handle ping failure
+          set_fact:
+            ping_result_msg: "{{ ping_result.msg | default('') }}"
+            ping_status: false
 
     - name: Determine detailed status
       set_fact:
         detailed_status: >-
-          {% if ping_result is succeeded %}
+          {% if ping_status %}
             REACHABLE
-          {% elif ping_result.unreachable is defined and ping_result.unreachable and 'Invalid/incorrect password' in ping_result.msg %}
+          {% elif 'Invalid/incorrect password' in ping_result_msg %}
             AUTHENTICATION FAILED
-          {% elif ping_result.msg is defined and ('Permission denied' in ping_result.msg) %}
+          {% elif 'Permission denied' in ping_result_msg %}
             AUTHENTICATION FAILED
-          {% elif ping_result.msg is defined and 'Connection refused' in ping_result.msg %}
+          {% elif 'Connection refused' in ping_result_msg %}
             CONNECTION REFUSED
-          {% elif ping_result.msg is defined and ('Timeout' in ping_result.msg or 'timed out' in ping_result.msg) %}
+          {% elif 'Timeout' in ping_result_msg or 'timed out' in ping_result_msg %}
             TIMEOUT
           {% else %}
             UNREACHABLE
