@@ -1,24 +1,39 @@
 ---
-- name: Ping all Linux hosts and collect status
+- name: Ping all Linux hosts and collect detailed status
   hosts: all
   gather_facts: no
   tasks:
 
-    - name: Ping the host
+    - name: Try to ping the host
       ansible.builtin.ping:
       register: ping_result
       ignore_errors: yes
 
+    - name: Determine detailed status
+      set_fact:
+        detailed_status: >-
+          {% if ping_result is succeeded %}
+            REACHABLE
+          {% elif 'Permission denied' in ping_result.msg %}
+            AUTHENTICATION FAILED
+          {% elif 'Connection refused' in ping_result.msg %}
+            CONNECTION REFUSED
+          {% elif 'Timeout' in ping_result.msg or 'timed out' in ping_result.msg %}
+            TIMEOUT
+          {% else %}
+            UNREACHABLE
+          {% endif %}
+
     - name: Set CSV line for each host
       set_fact:
-        ping_info_line: "{{ inventory_hostname }},{{ 'REACHABLE' if ping_result is succeeded else 'UNREACHABLE' }}"
+        ping_info_line: "{{ inventory_hostname }},{{ detailed_status }}"
 
-- name: Combine Ping CSV Report on Controller
+- name: Combine CSV Report on Controller
   hosts: localhost
   connection: local
   gather_facts: no
   vars:
-    csv_file_path: "./ping_reachability_report.csv"
+    csv_file_path: "./detailed_ping_report.csv"
     email_recipient: "m.jahangir.alam@ucb.com.bd"
     smtp_host: "172.23.18.26"
     smtp_port: 465
@@ -29,12 +44,12 @@
     - name: Build CSV from all hosts
       set_fact:
         csv_report: |
-          Host,Reachability
+          Host,Status
           {% for host in groups['all'] %}
           {{ hostvars[host].ping_info_line | default(host + ',UNKNOWN') }}
           {% endfor %}
 
-    - name: Save CSV to file
+    - name: Save CSV report to file
       copy:
         content: "{{ csv_report }}"
         dest: "{{ csv_file_path }}"
@@ -46,8 +61,8 @@
         username: "{{ smtp_user }}"
         password: "{{ smtp_password }}"
         to: "{{ email_recipient }}"
-        subject: "Ping Reachability CSV Report"
-        body: "Please find attached the ping reachability status report in CSV format."
+        subject: "Detailed Reachability CSV Report"
+        body: "Please find attached the reachability status report with detailed reasons."
         attach:
           - "{{ csv_file_path }}"
         secure: always
