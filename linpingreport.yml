@@ -11,14 +11,22 @@
 
     - name: Set host status fact
       set_fact:
-        host_status: >
-          {{ 'REACHABLE' if ping_result is succeeded else 'UNREACHABLE' }}
+        host_status: "{{ 'REACHABLE' if ping_result is succeeded else 'UNREACHABLE' }}"
 
-    - name: Add host status to global fact
-      ansible.builtin.set_fact:
-        all_hosts_status: "{{ (all_hosts_status | default({})) | combine({inventory_hostname: host_status}) }}"
+    - name: Add host status to global dict on localhost
       run_once: true
       delegate_to: localhost
+      set_fact:
+        all_hosts_status: "{{ (all_hosts_status | default({})) | combine({inventory_hostname: host_status}) }}"
+
+- name: Pass all_hosts_status fact to localhost for emailing
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Add all_hosts_status fact to localhost hostvars
+      add_host:
+        name: localhost
+        all_hosts_status: "{{ hostvars['localhost'].all_hosts_status | default({}) }}"
 
 - name: Send connectivity report email (CSV format)
   hosts: localhost
@@ -43,7 +51,7 @@
         username: ansible@upay.systems
         password: Upay@321
         to: m.jahangir.alam@ucb.com.bd
-        subject: "Unbound Timer CSV Report"
-        body: "Please find attached the unbound-anchor.timer status report in CSV format."
+        subject: "{{ email_subject }}"
+        body: "{{ csv_report }}"
         secure: always
         subtype: "csv"
